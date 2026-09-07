@@ -230,5 +230,4 @@ runs/
 wandb/
 .claude/
 *.npz
-*.md
 results/*
