@@ -1,0 +1,27 @@
+# Python 3.10+ required (tested on 3.11).
+#
+# The Tsetlin Machine library (TMU) is vendored in ./tmu and must be installed
+# separately, as it compiles a C extension via CFFI:
+#     pip install -e ./tmu
+# See README for the platform C-toolchain prerequisites.
+
+# --- Core: data, models, experiments ---
+numpy>=2.4
+scipy>=1.17
+pandas>=3.0
+pyyaml>=6.0
+scikit-learn>=1.8
+mlxtend>=0.25          # association-rule (apriori) baseline
+
+# --- Experiment tracking & hyperparameter optimization ---
+wandb>=0.27
+optuna>=4.9
+sqlalchemy>=2.0        # optuna study storage backend
+
+# --- Plotting & figures ---
+matplotlib>=3.10
+seaborn>=0.13
+plotly>=6.7            # interactive plots in notebooks/
+
+# --- Optional: GPU clause-bank backend (requires CUDA toolkit) ---
+# pycuda>=2026.1

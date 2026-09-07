@@ -1,0 +1,31 @@
+model:
+  clauses: 4000
+  T: 7439
+  s: 11.531246810630408
+  max_included_literals: 4
+  feature_negation: false
+  platform: CUDA
+  output_balancing: false
+  type_iii_feedback: false
+  max_positive_clauses: 0
+  mask_target_literal_p: 1
+  clause_drop_p: 0.1
+  type_i_ii_ratio: 1.324163723654398
+
+data:
+  rating_threshold: 4
+  val_ratio: 0.1
+  max_per_user: 50
+  input_subsample_t: 0
+  subsample_mode: input
+  max_classes: 0
+
+training:
+  epochs: 6
+  seed: 42
+
+runtime:
+  device_id: 7
+
+logging:
+  wandb_project: tomyris-negation-ablation

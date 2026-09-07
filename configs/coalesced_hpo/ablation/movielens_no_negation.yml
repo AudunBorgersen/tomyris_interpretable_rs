@@ -1,0 +1,60 @@
+# Negated-literal ablation (MovieLens 1M) — WITHOUT feature negation (as shipped).
+# Run: python experiments/coalesced_hpo.py --config configs/coalesced_hpo/movielens_no_negation.yml
+#
+# Matched pair with movielens_negation.yml — IDENTICAL except `feature_negation`
+# (false here, true there). Same wandb project `tomyris-negation-ablation`;
+# separate Optuna study so the two arms' trials are not pooled.
+#
+# See movielens_negation.yml for the rationale behind the search space and the
+# fixed feedback-masking mechanism.
+
+study:
+  study_name: negation-ablation-ml-noneg
+  n_trials: 16
+  direction: maximize
+  metric: ndcg@10
+  # storage: sqlite:///runs/coalesced_hpo/negation_ml_noneg.db
+  gpus: [7]
+  # gpus: [0, 1, 2, 3]
+
+fixed:
+  feature_negation: false
+  wandb_project: tomyris-negation-ablation
+  rating_threshold: 4
+  val_ratio: 0.1
+  max_per_user: 50
+  max_classes: 0
+  epochs: 6
+  mask_target_literal_p: 1.0
+  subsample_mode: input
+
+search_space:
+  clauses:
+    type: int
+    low: 1000
+    high: 4000
+    step: 200
+  t_per_clause:          # T is derived from this (see `derived` below)
+    type: float
+    low: 0.5
+    high: 2.5
+  s:
+    type: float
+    low: 3.5
+    high: 20.0
+  max_included_literals:
+    type: int
+    low: 4
+    high: 12
+  clause_drop_p:         # clause dropout — regularise the epoch ~4 peak-then-decay
+    type: categorical
+    choices: [0.0, 0.1, 0.25, 0.5]
+  type_i_ii_ratio:       # >1 favours Type I (include), <1 favours Type II (exclude)
+    type: float
+    low: 0.5
+    high: 2.0
+
+derived:
+  T: "round(clauses * t_per_clause)"
+
+drop_from_args: [t_per_clause]

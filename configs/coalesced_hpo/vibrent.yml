@@ -1,0 +1,63 @@
+# Optuna HPO for coalesced_baseline on the Vibrent rental dataset.
+# Run: python experiments/coalesced_hpo.py --config configs/coalesced_hpo/vibrent.yml
+#
+# The `fixed` overrides are applied on top of configs/coalesced_baseline/default.yml
+# for every trial. Setting `dataset`/`k_core` here retargets the sweep at Vibrent
+# (implicit feedback, k-core population) without a separate base config.
+
+study:
+  study_name: coalesced-hpo-vibrent
+  n_trials: 32
+  direction: maximize
+  metric: ndcg@50         # key returned by evaluate(); e.g. hit@10, ndcg@10, ndcg@50
+  # For a multi-GPU sweep on the server, add a shared store and the GPU list, e.g.:
+  # storage: sqlite:///runs/coalesced_hpo/vibrent.db
+  gpus: [6]
+  # gpus: [0, 1, 2, 3]
+
+# Overrides applied on top of coalesced_baseline/default.yml for every trial.
+# dataset/k_core retarget Vibrent; tune epochs and max_classes down for faster trials.
+fixed:
+  dataset: vibrent
+  unit: group             # recommend catalogue groups (denser) | outfit = physical items
+  k_core: 5
+  epochs: 10
+  max_classes: 0          # 0 = full catalogue (~4.7k outfits after k-core)
+  mask_target_literal_p: 0.0
+  subsample_mode: feedback  # subsample_mode: input | feedback
+  feature_negation: false
+  max_per_user: 0
+  max_included_literals: 10
+
+search_space:
+  clauses:
+    type: int
+    low: 1500
+    high: 3600
+    step: 100
+  t_per_clause:          # T is derived from this (see `derived` below)
+    type: float
+    low: 0.5
+    high: 5.0
+  s:
+    type: float
+    low: 10.0
+    high: 30.0
+  clause_drop_p:         # clause dropout — regularise the epoch ~4 peak-then-decay
+    type: categorical
+    choices: [0.0, 0.1, 0.25, 0.5]
+  type_i_ii_ratio:       # >1 favours Type I (include), <1 favours Type II (exclude)
+    type: float
+    low: 0.5
+    high: 2.0
+  input_subsample_t:
+    type: categorical
+    choices: [0.0, 0.01, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3]
+
+# Params computed from sampled values. Evaluated in a no-builtins namespace
+# exposing only round/min/max/int/float plus the sampled + fixed values.
+derived:
+  T: "round(clauses * t_per_clause)"
+
+# Helper params used only to derive others; not passed to the experiment.
+drop_from_args: [t_per_clause]

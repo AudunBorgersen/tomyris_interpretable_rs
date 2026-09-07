@@ -1,0 +1,37 @@
+# Coalesced Weighted TM baseline — Vibrent rental dataset
+# Run: python experiments/coalesced_baseline.py --config configs/coalesced_baseline/vibrent.yml
+#
+# Implicit feedback (a rental == a positive interaction). Population is reduced to
+# the iterative k-core (k_core); there is no rating_threshold.
+
+model:
+  clauses: 2400          # shared clause bank size; ~16 min/epoch per 100 clauses on CPU
+  T: 3468                # voting threshold
+  s: 7.6                # specificity (controls literal inclusion probability)
+  max_included_literals: 15
+  feature_negation: false
+  platform: CUDA         # CPU | CUDA
+  output_balancing: false
+  type_iii_feedback: false
+  max_positive_clauses: 0  # 0 = uncapped (defaults to number_of_clauses)
+  mask_target_literal_p: 1.0  # 0.0 = off, 1.0 = always mask, (0,1) = noisy
+  clause_drop_p: 0.0      # clause dropout during training (0.0 = off); regulariser
+  type_i_ii_ratio: 2.0    # Type I (include) vs Type II (exclude) feedback balance
+
+data:
+  dataset: vibrent      # selects datasets.VibrentRental via datasets.get_dataset
+  unit: group           # recommend catalogue groups (denser) | outfit = physical items
+  k_core: 5             # iterative k-core: every user >= k items AND item >= k users
+  val_ratio: 0.1        # users held out for HPO/model selection (0 = select on test)
+  max_per_user: 0      # positive items sampled per user (0 = all)
+  max_classes: 0        # restrict to N most frequent outfits (0 = all ~4.7k outfits)
+
+training:
+  epochs: 10
+  seed: 42
+
+runtime:
+  device_id: 5          # GPU index exposed via CUDA_VISIBLE_DEVICES
+
+logging:
+  wandb_project: tomyris-coalesced-vibrent  # base project; suffixed with item count

@@ -1,0 +1,72 @@
+# Negated-literal ablation (MovieLens 1M) — WITH feature negation.
+# Run: python experiments/coalesced_hpo.py --config configs/coalesced_hpo/movielens_negation.yml
+#
+# One of a matched pair with movielens_no_negation.yml. The two configs are
+# IDENTICAL except `feature_negation` (true here, false there) so the sweeps
+# differ only in whether clauses may include negated (item-absent) literals.
+# Both share the wandb project `tomyris-negation-ablation` (runs are told apart
+# by config.feature_negation) but use separate Optuna studies so trials aren't
+# pooled across arms.
+#
+# Search space + fixed mechanism (feedback masking, clause dropout) mirror the
+# shipped MovieLens operating point (~1600cl / T~1600 / s~6 / max_lit~8) and
+# comfortably contain it, giving the negation arm a fair, equally-budgeted shot.
+# Selection is on best_ndcg@10 — the metric the ablation table reports.
+
+study:
+  study_name: negation-ablation-ml-neg
+  n_trials: 16
+  direction: maximize
+  metric: ndcg@10
+  # Multi-GPU on the server: add a shared store + the GPU list, e.g.
+  # storage: sqlite:///runs/coalesced_hpo/negation_ml_neg.db
+  gpus: [6]
+  # gpus: [0, 1, 2, 3]
+
+# Applied on top of coalesced_baseline/default.yml for every trial. Dataset is
+# left at the default movielens1m; the feedback-masking mechanism is fixed so
+# only capacity/specificity are searched.
+fixed:
+  feature_negation: true
+  wandb_project: tomyris-negation-ablation
+  rating_threshold: 4
+  val_ratio: 0.1
+  max_per_user: 50
+  max_classes: 0
+  epochs: 6
+  mask_target_literal_p: 1.0
+  subsample_mode: input
+
+search_space:
+  clauses:
+    type: int
+    low: 1000
+    high: 4000
+    step: 200
+  t_per_clause:          # T is derived from this (see `derived` below)
+    type: float
+    low: 0.5
+    high: 2.5
+  s:
+    type: float
+    low: 3.5
+    high: 20.0
+  max_included_literals:
+    type: int
+    low: 4
+    high: 12
+  clause_drop_p:         # clause dropout — regularise the epoch ~4 peak-then-decay
+    type: categorical
+    choices: [0.0, 0.1, 0.25, 0.5]
+  type_i_ii_ratio:       # >1 favours Type I (include), <1 favours Type II (exclude)
+    type: float
+    low: 0.5
+    high: 2.0
+
+# Params computed from sampled values. Evaluated in a no-builtins namespace
+# exposing only round/min/max/int/float plus the sampled + fixed values.
+derived:
+  T: "round(clauses * t_per_clause)"
+
+# Helper params used only to derive others; not passed to the experiment.
+drop_from_args: [t_per_clause]

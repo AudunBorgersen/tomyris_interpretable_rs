@@ -1,0 +1,39 @@
+# Optuna HPO for coalesced_baseline
+# Run: python experiments/coalesced_hpo.py
+
+study:
+  study_name: coalesced-hpo
+  n_trials: 50
+  direction: maximize
+  metric: ndcg@10         # key returned by evaluate(); e.g. hit@10, ndcg@10, ndcg@50
+
+# Overrides applied on top of coalesced_baseline/default.yml for every trial.
+# Tune epochs and max_classes down for faster trials.
+fixed:
+  epochs: 5
+  max_classes: 0
+
+search_space:
+  clauses:
+    type: int
+    low: 100
+    high: 1000
+    step: 100
+  T:
+    type: int
+    low: 200
+    high: 2000
+  s:
+    type: float
+    low: 1.0
+    high: 20.0
+  max_included_literals:
+    type: int
+    low: 3
+    high: 32
+  feature_negation:
+    type: categorical
+    choices: [true, false]
+  max_per_user:
+    type: categorical
+    choices: [0, 5, 10, 20, 30, 50]

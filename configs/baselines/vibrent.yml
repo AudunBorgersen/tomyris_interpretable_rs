@@ -1,0 +1,43 @@
+# Baseline recommenders benchmark — Vibrent rental dataset
+# Run: python baseline_models/run_all.py --config configs/baselines/vibrent.yml
+#
+# Implicit feedback (a rental == a positive interaction); population reduced to the
+# iterative k-core. Mirrors configs/baselines/default.yml; CLI flags of the same
+# (flat) name override any value here.
+
+data:
+  dataset: vibrent        # selects datasets.VibrentRental via datasets.get_dataset
+  unit: group             # recommend catalogue groups (denser) | outfit = physical items
+  k_core: 5               # iterative k-core threshold
+  max_items: 0            # restrict to N most popular outfits (0 = full catalogue)
+
+evaluation:
+  ks: [1, 10, 50]  # cut-offs for Hit@k / NDCG@k / Novelty@k / Coverage@k
+
+# --- per-model hyperparameters -------------------------------------------------
+
+knn:
+  k_knn: 50               # neighbours for both Item-kNN and User-kNN
+
+svd:
+  n_factors: 64           # latent factors
+
+decision_tree:
+  dt_max_depth: 20        # max tree depth
+
+ease:
+  ease_l2: 250.0          # L2 regularisation (EASE is robust across 100–1000)
+
+apriori:
+  # Apriori scoring cost scales with the number of mined rules. Conservative
+  # values keep an initial full-catalogue run tractable — lower the support to
+  # mine more rules.
+  apriori_min_support: 0.05     # min itemset support (fraction of users)
+  apriori_min_confidence: 0.2   # min rule confidence
+  apriori_max_len: 2            # max frequent-itemset size (2 = pairwise rules)
+
+# --- output --------------------------------------------------------------------
+
+output:
+  latex: true             # also print a LaTeX results table
+  latex_out: results/tex/baseline_results_vibrent.tex

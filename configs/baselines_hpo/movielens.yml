@@ -1,0 +1,42 @@
+# Grid search for the baseline recommenders on MovieLens 1M.
+# Run: python baseline_models/grid_search.py --config configs/baselines_hpo/default.yml
+#
+# Each model is fit on x_train and selected on x_val by `select_metric`; the
+# held-out x_test metrics are then reported at the selected configuration. This
+# mirrors the validation-based selection now used for the TM (coalesced_hpo).
+
+data:
+  rating_threshold: 4
+  val_ratio: 0.1          # must be > 0 — selection happens on the validation users
+  max_items: 0            # 0 = full catalogue
+
+evaluation:
+  ks: [1, 10, 50]  # cut-offs for Hit@k / NDCG@k / Novelty@k / Coverage@k
+  select_metric: ndcg@10  # validation metric each model is tuned on
+
+# Per-model grids. Keys are constructor kwargs, passed straight to the model.
+# An empty grid ({}) means the model has nothing to tune and is evaluated once.
+models:
+  Random: {}
+  Popularity: {}
+  Item-kNN:
+    k: [10, 20, 50, 100, 200]
+  User-kNN:
+    k: [10, 20, 50, 100, 200]
+  SVD:
+    n_factors: [16, 32, 64, 128, 256]
+  DecisionTree:
+    max_depth: [10, 20, 40]
+    min_samples_leaf: [1, 5, 20]
+  EASE:
+    l2: [10, 50, 100, 250, 500, 1000]
+  # Apriori dominates runtime (scoring scales with the mined rule count), so its
+  # grid is kept small. Widen it — or lower max_items — only when you can afford it.
+  Apriori:
+    min_support: [0.05, 0.1]
+    min_confidence: [0.2, 0.4]
+    max_len: [2]
+
+output:
+  latex: true
+  latex_out: results/tex/baseline_hpo_results.tex  # relative to repo root

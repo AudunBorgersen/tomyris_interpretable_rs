@@ -1,0 +1,44 @@
+# Baseline recommenders benchmark — default configuration
+# Run: python baseline_models/run_all.py --config configs/baselines/default.yml
+#
+# An initial, comprehensive sweep over every baseline on the full MovieLens 1M
+# catalogue. CLI flags of the same (flat) name override any value here.
+
+data:
+  rating_threshold: 4     # ratings >= this count as positive interactions
+  max_items: 0            # restrict to N most popular items (0 = full catalogue)
+
+evaluation:
+  ks: [1, 10, 50]  # cut-offs for Hit@k / NDCG@k / Novelty@k / Coverage@k
+
+# --- per-model hyperparameters -------------------------------------------------
+
+knn:
+  item_knn: 10               # neighbours for Item-kNN
+  user_knn: 50               # neighbours for User-kNN
+
+svd:
+  n_factors: 256           # latent factors
+
+decision_tree:
+  dt_max_depth: 10        # max tree depth
+  dt_min_samples_leaf: 1  # min samples per leaf
+
+ease:
+  ease_l2: 500.0          # L2 regularisation (EASE is robust across 100–1000)
+
+apriori:
+  # Apriori is by far the slowest baseline: scoring cost scales with the number
+  # of mined rules, which explodes at low support/confidence on the full
+  # catalogue. These values are deliberately conservative to keep an initial
+  # full-catalogue run tractable — lower the support to mine more rules.
+  apriori_min_support: 0.05     # min itemset support (fraction of users)
+  apriori_min_confidence: 0.2   # min rule confidence
+  apriori_max_len: 2            # max frequent-itemset size (2 = pairwise rules)
+
+# --- output --------------------------------------------------------------------
+
+output:
+  latex: true             # also print a LaTeX results table
+  # Where to write the .tex table; relative paths resolve against the repo root.
+  latex_out: results/tex/baseline_results.tex

@@ -1,0 +1,32 @@
+# Coalesced Weighted TM baseline — no feature negation variant
+# Run: python experiments/coalesced_baseline.py --config configs/coalesced_baseline/no_negation.yml
+
+model:
+  clauses: 1600
+  T: 1600
+  s: 6.0
+  max_included_literals: 8
+  feature_negation: false
+  platform: CUDA
+  output_balancing: false
+  type_iii_feedback: false
+  max_positive_clauses: 0
+  mask_target_literal_p: 1.0
+  clause_drop_p: 0.5      # clause dropout during training (0.0 = off); regulariser
+  type_i_ii_ratio: 2.0    # Type I (include) vs Type II (exclude) feedback balance
+
+
+data:
+  rating_threshold: 4
+  max_per_user: 50
+  max_classes: 0
+
+training:
+  epochs: 10
+  seed: 42
+
+runtime:
+  device_id: 6
+
+logging:
+  wandb_project: tomyris-coalesced
